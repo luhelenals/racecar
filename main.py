@@ -28,7 +28,20 @@ def drawCar(car, gameDisplay):
 
 # Draw street movement
 def loadStreet(gameDisplay, streetOffset):
-    gameDisplay.fill(Color.GREY.value)   
+    gameDisplay.fill(Color.GREY.value)
+    centerLine = pygame.Surface((15, 40))
+    centerLine.fill(Color.YELLOW.value)
+
+    screenW = gameDisplay.get_rect().width
+    lineW = centerLine.get_rect().width
+    lineH = centerLine.get_rect().height
+    screenH = gameDisplay.get_rect().height
+    offset = 40
+    numLines = int(screenH/(lineH + offset))
+
+    for i in range(1, numLines + 1):
+        line_position = int(screenH - (i * (streetOffset + lineH)))
+        gameDisplay.blit(centerLine, (int((screenW - lineW) / 2), line_position))
 
 # Handle key pressing events for movement
 def handleEvents(car, pygame, crashed):
