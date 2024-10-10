@@ -19,39 +19,50 @@ def initGame():
     crashed = False
 
     carImg = pygame.image.load('resources/racecar.png')
-    car = Car(display_width * 0.4, display_height * 0.75, carImg)
+    car = Car(display_width * 0.5, display_height * 0.75, carImg)
     return gameDisplay, clock, crashed, car, pygame
 
 # Draw car at given position
 def drawCar(car, gameDisplay):
     gameDisplay.blit(car.image, (car.x, car.y))
 
+# Draw street movement
+def loadStreet(gameDisplay, streetOffset):
+    gameDisplay.fill(Color.GREY.value)   
 
 # Handle key pressing events for movement
 def handleEvents(car, pygame, crashed):
-    keys=pygame.key.get_pressed()
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             crashed = True
         
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
-                car.moveX(1)
+                car.move_x = 1.5  # Start moving right
             if event.key == pygame.K_LEFT:
-                car.moveX(-1)
+                car.move_x = -1.5  # Start moving left
             if event.key == pygame.K_ESCAPE:
                 return True
+
+        if event.type == pygame.KEYUP and (event.key in [pygame.K_RIGHT, pygame.K_LEFT]):
+                car.move_x = 0  # Stop moving when key is released
+            
     return crashed
 
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
+    streetOffset = gameDisplay.get_rect().height + 1
 
     # Main game loop
     while not crashed:
         crashed = handleEvents(car, pygame, crashed)
 
-        gameDisplay.fill(Color.GREY.value)
+        car.move()
+
+        streetOffset -= 5
+        
+        loadStreet(gameDisplay, streetOffset)
+
         drawCar(car, gameDisplay)
 
         pygame.display.update()

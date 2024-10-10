@@ -21,17 +21,16 @@ class Car:
 
         :param x: The x-coordinate of the car.
         :param y: The y-coordinate of the car.
-        :param image: The image representing the car (can be a file path or URL).
+        :param image: The image representing the car (file path or URL).
         """
         self.x = x
         self.y = y
         self.image = image
+        self.move_x = 0  # Movement direction: -1 for left, 1 for right, 0 for no movement
 
-    def moveX(self, delta_x):
+    def move(self):
         """
-        Moves the car by delta_x and delta_y.
-
-        :param delta_x: The change in the x-coordinate.
-        :param delta_y: The change in the y-coordinate.
+        Moves the car by move_x.
         """
-        self.x += delta_x
+        self.x += self.move_x
+        
