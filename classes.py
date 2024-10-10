@@ -26,7 +26,7 @@ class Car:
         self.x = x
         self.y = y
         self.image = image
-        self.move_x = 0  # Movement direction: -1 for left, 1 for right, 0 for no movement
+        self.move_x = 0  # Movement direction: negative for left, positive for right, 0 for no movement
 
     def move(self):
         """

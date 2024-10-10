@@ -8,13 +8,14 @@ def initGame():
     display_width = 800
     display_height = 600
 
-    gameDisplay = pygame.display.set_mode((display_width,display_height))
+    gameDisplay = pygame.display.set_mode((display_width, display_height))
     pygame.display.set_caption('RaceCar Game')
     clock = pygame.time.Clock()
     crashed = False
 
     carImg = pygame.image.load('resources/racecar.png')
-    car = Car(display_width * 0.5, display_height * 0.75, carImg)
+    x = (display_width - carImg.get_rect().width) / 2
+    car = Car(x, display_height * 0.75, carImg)
     return gameDisplay, clock, crashed, car, pygame
 
 # Draw car at given position
@@ -48,23 +49,30 @@ def loadStreet(gameDisplay, streetOffset):
         gameDisplay.blit(centerLine, (int((screenW - lineW) / 2), line_position))
 
 # Handle key pressing events for movement
-def handleEvents(car, pygame, crashed):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            crashed = True
-        
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RIGHT:
-                car.move_x = 1.5  # Start moving right
-            if event.key == pygame.K_LEFT:
-                car.move_x = -1.5  # Start moving left
-            if event.key == pygame.K_ESCAPE:
-                return True
+def handleEvents(car, pygame):
+    keys = pygame.key.get_pressed()  # Get the state of all keys
+    if keys[pygame.K_RIGHT]:
+        car.move_x = 5  # Move right
+    elif keys[pygame.K_LEFT]:
+        car.move_x = -5  # Move left
+    else:
+        car.move_x = 0  # Stop moving when no keys are pressed
 
-        if event.type == pygame.KEYUP and (event.key in [pygame.K_RIGHT, pygame.K_LEFT]):
-            car.move_x = 0  # Stop moving when key is released
-            
-    return crashed
+    # Check for quitting the game
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            return True
+
+    return False
+
+# Update car position, ensuring it stays within screen bounds
+def updateCarPosition(car, screenW):
+    car.x += car.move_x  # Update position based on movement
+    # Ensure the car stays within screen boundaries
+    if car.x < 0:
+        car.x = 0
+    elif car.x > screenW - car.image.get_rect().width:
+        car.x = screenW - car.image.get_rect().width
 
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
@@ -72,19 +80,22 @@ def main():
 
     # Main game loop
     while not crashed:
-        crashed = handleEvents(car, pygame, crashed)
+        crashed = handleEvents(car, pygame)
 
-        car.move()
+        # Update the car's position within the screen boundaries
+        screenW = gameDisplay.get_rect().width
+        updateCarPosition(car, screenW)
 
+        # Move the street
         streetOffset -= 5  # Move the street lines up instead of down
-        
-        # Reset the offset when it exceeds the height of one line and its offset
-        if streetOffset <= -(40 + 40):  # line height + offset
+        if streetOffset <= -80:  # line height + offset
             streetOffset = 0  # Reset to avoid overflow
 
+        # Draw everything
         loadStreet(gameDisplay, streetOffset)
         drawCar(car, gameDisplay)
 
+        # Update the display
         pygame.display.update()
         clock.tick(60)
 
