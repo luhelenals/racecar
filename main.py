@@ -1,8 +1,3 @@
-# Resolving import issues
-import sys
-from path import path
-sys.path.append(path)
-
 import pygame
 from classes import Color, Car
 
@@ -10,8 +5,8 @@ from classes import Color, Car
 def initGame():
     pygame.init()
 
-    display_width = 400
-    display_height = 300
+    display_width = 800
+    display_height = 600
 
     gameDisplay = pygame.display.set_mode((display_width,display_height))
     pygame.display.set_caption('RaceCar Game')
@@ -29,18 +24,27 @@ def drawCar(car, gameDisplay):
 # Draw street movement
 def loadStreet(gameDisplay, streetOffset):
     gameDisplay.fill(Color.GREY.value)
-    centerLine = pygame.Surface((15, 40))
+    centerLine = pygame.Surface((15, 40))  # Width: 15, Height: 40
     centerLine.fill(Color.YELLOW.value)
 
     screenW = gameDisplay.get_rect().width
     lineW = centerLine.get_rect().width
     lineH = centerLine.get_rect().height
     screenH = gameDisplay.get_rect().height
-    offset = 40
-    numLines = int(screenH/(lineH + offset))
+    offset = 40  # Gap between each line
+    
+    # Calculate how many lines should be visible at once
+    numLines = int(screenH / (lineH + offset)) + 1  # Extra lines for smooth wrap-around
 
-    for i in range(1, numLines + 1):
-        line_position = int(screenH - (i * (streetOffset + lineH)))
+    for i in range(numLines):
+        # Calculate each line's position with streetOffset
+        line_position = (i * (lineH + offset)) - streetOffset
+
+        # Reset line position to the top once it's off the bottom
+        if line_position >= screenH:
+            line_position -= (screenH + lineH + offset)
+
+        # Draw the center line at the calculated position
         gameDisplay.blit(centerLine, (int((screenW - lineW) / 2), line_position))
 
 # Handle key pressing events for movement
@@ -58,13 +62,13 @@ def handleEvents(car, pygame, crashed):
                 return True
 
         if event.type == pygame.KEYUP and (event.key in [pygame.K_RIGHT, pygame.K_LEFT]):
-                car.move_x = 0  # Stop moving when key is released
+            car.move_x = 0  # Stop moving when key is released
             
     return crashed
 
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
-    streetOffset = gameDisplay.get_rect().height + 1
+    streetOffset = 0  # Start with zero offset
 
     # Main game loop
     while not crashed:
@@ -72,10 +76,13 @@ def main():
 
         car.move()
 
-        streetOffset -= 5
+        streetOffset -= 5  # Move the street lines up instead of down
         
-        loadStreet(gameDisplay, streetOffset)
+        # Reset the offset when it exceeds the height of one line and its offset
+        if streetOffset <= -(40 + 40):  # line height + offset
+            streetOffset = 0  # Reset to avoid overflow
 
+        loadStreet(gameDisplay, streetOffset)
         drawCar(car, gameDisplay)
 
         pygame.display.update()
