@@ -1,5 +1,6 @@
 import sys
-sys.path.append('C:/Users/Luiza.Lima/AppData/Local/Programs/Python/Python311-32/Lib/site-packages')
+from path import path
+sys.path.append(path)
 
 import pygame
 
