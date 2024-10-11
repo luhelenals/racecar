@@ -14,6 +14,7 @@ def initGame():
     crashed = False
 
     carImg = pygame.image.load('resources/racecar.png')
+    carImg = pygame.transform.scale(carImg, (carImg.get_rect().width * 0.06, carImg.get_rect().height * 0.06))
     x = (display_width - carImg.get_rect().width) / 2
     car = Car(x, display_height * 0.75, carImg)
     return gameDisplay, clock, crashed, car, pygame
@@ -74,6 +75,10 @@ def updateCarPosition(car, screenW):
     elif car.x > screenW - car.image.get_rect().width:
         car.x = screenW - car.image.get_rect().width
 
+def getObstacles(gameDisplay):
+    #gameDisplay.blit
+    return 0
+
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
     streetOffset = 0  # Start with zero offset
@@ -93,6 +98,7 @@ def main():
 
         # Draw everything
         loadStreet(gameDisplay, streetOffset)
+        getObstacles(gameDisplay)
         drawCar(car, gameDisplay)
 
         # Update the display
