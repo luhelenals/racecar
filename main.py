@@ -51,14 +51,15 @@ def loadStreet(gameDisplay, streetOffset):
         gameDisplay.blit(centerLine, (int((screenW - lineW) / 2), line_position))
 
 # Handle key pressing events for movement
-def handleEvents(car, pygame):
-    keys = pygame.key.get_pressed()  # Get the state of all keys
-    if keys[pygame.K_RIGHT]:
-        car.move_x = 5  # Move right
-    elif keys[pygame.K_LEFT]:
-        car.move_x = -5  # Move left
-    else:
-        car.move_x = 0  # Stop moving when no keys are pressed
+def handleEvents(car, pygame, paused):
+    if not paused:
+        keys = pygame.key.get_pressed()  # Get the state of all keys
+        if keys[pygame.K_RIGHT]:
+            car.move_x = 5  # Move right
+        elif keys[pygame.K_LEFT]:
+            car.move_x = -5  # Move left
+        else:
+            car.move_x = 0  # Stop moving when no keys are pressed
 
     # Check for quitting the game
     for event in pygame.event.get():
@@ -135,23 +136,22 @@ def checkCollision(car, obstacle):
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
     streetOffset = 0  # Start with zero offset
-
+    paused = False
     lastHoleTime = 0  # To track when the last hole was generated
     holeObstacle = None  # Placeholder for the hole image
     obstacles = []  # List to store active obstacles
 
     # Main game loop
     while not crashed:
-        crashed = handleEvents(car, pygame)
-
         # Update the car's position within the screen boundaries
         screenW = gameDisplay.get_rect().width
         updateCarPosition(car, screenW)
 
-        # Move the street
-        streetOffset -= 5  # Move the street lines up instead of down
-        if streetOffset <= -80:  # line height + offset
-            streetOffset = 0  # Reset to avoid overflow
+        if not paused:
+            # Move the street
+            streetOffset -= 5  # Move the street lines up instead of down
+            if streetOffset <= -80:  # line height + offset
+                streetOffset = 0  # Reset to avoid overflow
 
         # Calculate elapsed time
         elapsedTime = pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
@@ -159,10 +159,12 @@ def main():
         # Draw everything
         loadStreet(gameDisplay, streetOffset)
         
-        # Get and display obstacles
-        lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles)
+        if not paused:
+            # Get and display obstacles
+            lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles)
         
         drawCar(car, gameDisplay)
+        crashed = handleEvents(car, pygame, paused)
 
         # Update the display
         pygame.display.update()
