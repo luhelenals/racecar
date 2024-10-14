@@ -46,7 +46,7 @@ class Obstacle:
         :param y: The y-coordinate of the car.
         :param image: The image representing the car (file path or URL).
         """
-    def __init__(self, x, y, image):
+    def __init__(self, image, x, y):
         self.x = x
         self.y = y
         self.image = image

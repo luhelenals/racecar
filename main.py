@@ -96,25 +96,24 @@ def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obst
         y = -holeSize.height  # Start the hole just above the screen, so it moves down into view
 
         # Add the new hole to the obstacles list
-        obstacles.append((holeObstacle, x, y))
+        obstacles.append(Obstacle(holeObstacle, x, y))
 
         # Reset the lastHoleTime to the current elapsedTime
         lastHoleTime = elapsedTime
 
     # Move the obstacles down and blit them on the screen
     for obstacle in obstacles[:]:
-        holeImg, x, y = obstacle
-        y += 5  # Move the hole down by 5 pixels per frame
+        obstacle.y += 5  # Move the hole down by 5 pixels per frame
 
         # Remove the hole if it goes off the screen
-        if y > gameDisplay.get_rect().height:
+        if obstacle.y > gameDisplay.get_rect().height:
             obstacles.remove(obstacle)  # Remove obstacle if it moves out of screen
         else:
             # Update the obstacle's position in the list
-            obstacles[obstacles.index(obstacle)] = (holeImg, x, y)
+            obstacles[obstacles.index(obstacle)] = obstacle
             
             # Blit the hole to the screen at its new position
-            gameDisplay.blit(holeImg, (x, y))
+            gameDisplay.blit(obstacle.image, (obstacle.x, obstacle.y))
         
         if checkCollision(car, obstacle):
             car.damage(10)
@@ -127,7 +126,7 @@ def checkCollision(car, obstacle):
     carRect = pygame.Rect(car.x, car.y, car.image.get_width(), car.image.get_height())
 
     # Check for collision with each obstacle (hole) in the obstacles list
-    holeRect = pygame.Rect(obstacle[1], obstacle[2], obstacle[0].get_width(), obstacle[0].get_height())
+    holeRect = pygame.Rect(obstacle.x, obstacle.y, obstacle.image.get_width(), obstacle.image.get_height())
 
     # Check if the car's rect collides with the hole's rect
     if carRect.colliderect(holeRect):
