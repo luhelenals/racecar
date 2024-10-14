@@ -33,6 +33,7 @@ class Car:
         self.image = image
         self.move_x = 0  # Movement direction: negative for left, positive for right, 0 for no movement
         self.health = 100
+        self.nitro = False
 
     def move(self):
         """
@@ -55,3 +56,4 @@ class Obstacle:
         self.x = x
         self.y = y
         self.image = image
+        self.hit = False

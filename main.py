@@ -51,22 +51,50 @@ def loadStreet(gameDisplay, streetOffset):
         gameDisplay.blit(centerLine, (int((screenW - lineW) / 2), line_position))
 
 # Handle key pressing events for movement
-def handleEvents(car, pygame, paused):
+def handleEvents(car, pygame, paused, acceleration, nitroTime):
+    keys = pygame.key.get_pressed()  # Get the state of all keys
+    current_time = pygame.time.get_ticks() / 1000  # Get current time in seconds
+    
     if not paused:
-        keys = pygame.key.get_pressed()  # Get the state of all keys
         if keys[pygame.K_RIGHT]:
-            car.move_x = 5  # Move right
+            car.move_x = 5 + acceleration  # Apply acceleration to movement
         elif keys[pygame.K_LEFT]:
-            car.move_x = -5  # Move left
+            car.move_x = -5 - acceleration  # Apply acceleration to movement
+        elif keys[pygame.K_SPACE] and not car.nitro:
+            acceleration += 3  # Speed up by 3
+            car.nitro = True
+            nitroTime = current_time  # Record the time when nitro was activated
         else:
             car.move_x = 0  # Stop moving when no keys are pressed
+
+        # Deactivate nitro after 3 seconds
+        if car.nitro and current_time - nitroTime >= 3:
+            car.nitro = False
+            acceleration = 0  # Reset acceleration to default
+
+    # Handle pause key
+    if keys[pygame.K_p] and not paused:
+        paused = True
+        car.move_x = 0
+    elif keys[pygame.K_p]:
+        paused = False
+        car.move_x = 0
 
     # Check for quitting the game
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            return True
+            return True, paused, acceleration, nitroTime
 
-    return False
+    return False, paused, acceleration, nitroTime
+
+def showHealth(car, gameDisplay):
+    pygame.font.init()
+    my_font = pygame.font.SysFont('Arial', 30)
+    health_surface = my_font.render('Health: ' + str(car.health), False, Color.BLACK.value)
+    if car.nitro:
+        nitro_surface = my_font.render('Nitro ON', False, Color.GREEN.value)
+        gameDisplay.blit(nitro_surface, (5,40))
+    gameDisplay.blit(health_surface, (5,5))
 
 # Update car position, ensuring it stays within screen bounds
 def updateCarPosition(car, screenW):
@@ -77,7 +105,7 @@ def updateCarPosition(car, screenW):
     elif car.x > screenW - car.image.get_rect().width:
         car.x = screenW - car.image.get_rect().width
 
-def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles):
+def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles, paused, acceleration):
     # Time-based generation of new hole obstacle every 5 seconds
     if elapsedTime - lastHoleTime >= 1:
         try:
@@ -102,7 +130,8 @@ def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obst
 
     # Move the obstacles down and blit them on the screen
     for obstacle in obstacles[:]:
-        obstacle.y += 5  # Move the hole down by 5 pixels per frame
+        if not paused:
+            obstacle.y += (5 + acceleration)  # Move the hole down by 5 pixels per frame
 
         # Remove the hole if it goes off the screen
         if obstacle.y > gameDisplay.get_rect().height:
@@ -110,13 +139,14 @@ def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obst
         else:
             # Update the obstacle's position in the list
             obstacles[obstacles.index(obstacle)] = obstacle
-            
+
             # Blit the hole to the screen at its new position
             gameDisplay.blit(obstacle.image, (obstacle.x, obstacle.y))
-        
-        if checkCollision(car, obstacle):
-            car.damage(10)
-            print('you lost a life')
+
+            # Check for collision only if the obstacle hasn't been hit yet
+            if checkCollision(car, obstacle) and not obstacle.hit:
+                car.damage(10)
+                obstacle.hit = True  # Mark the obstacle as hit to prevent multiple deductions
 
     return lastHoleTime
 
@@ -140,6 +170,9 @@ def main():
     lastHoleTime = 0  # To track when the last hole was generated
     holeObstacle = None  # Placeholder for the hole image
     obstacles = []  # List to store active obstacles
+    elapsedTime = 0
+    acceleration = 0
+    nitroTime = 0
 
     # Main game loop
     while not crashed:
@@ -149,23 +182,24 @@ def main():
 
         if not paused:
             # Move the street
-            streetOffset -= 5  # Move the street lines up instead of down
+            streetOffset -= (5 + acceleration)  # Move the street lines up instead of down
             if streetOffset <= -80:  # line height + offset
                 streetOffset = 0  # Reset to avoid overflow
 
         # Calculate elapsed time
-        elapsedTime = pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
+        if not paused:
+            elapsedTime = pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
 
         # Draw everything
         loadStreet(gameDisplay, streetOffset)
         
-        if not paused:
-            # Get and display obstacles
-            lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles)
+        # Get and display obstacles
+        lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles, paused, acceleration)
         
         drawCar(car, gameDisplay)
-        crashed = handleEvents(car, pygame, paused)
-
+        crashed, paused, acceleration, nitroTime = handleEvents(car, pygame, paused, acceleration, nitroTime)
+        showHealth(car, gameDisplay)
+        
         # Update the display
         pygame.display.update()
         clock.tick(60)
