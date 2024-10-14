@@ -1,4 +1,5 @@
 from enum import Enum
+import pygame
 
 class Color(Enum):
     RED = (255, 0, 0)
@@ -13,6 +14,10 @@ class Color(Enum):
     PURPLE = (128, 0, 128)
     PINK = (255, 192, 203)
     GREY = (60, 60, 60)
+
+class ObstacleType(Enum):
+    HOLE = pygame.transform.scale(pygame.image.load('resources/hole.png'), (80, 80)) 
+    CAR = pygame.image.load('resources/redCar.png')
 
 class Car:
     def __init__(self, x, y, image):
