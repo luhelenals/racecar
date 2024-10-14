@@ -1,5 +1,3 @@
-import sys
-sys.path.append('C:/Users/ALUNO SESI E SENAI.MATRIZ/AppData/Local/Programs/Python/Python313/Lib/site-packages')
 import pygame
 import random
 from classes import *
