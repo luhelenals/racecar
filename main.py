@@ -1,5 +1,8 @@
+import sys
+sys.path.append('C:/Users/ALUNO SESI E SENAI.MATRIZ/AppData/Local/Programs/Python/Python313/Lib/site-packages')
 import pygame
-from classes import Color, Car
+import random
+from classes import *
 
 # Initialize game window and car
 def initGame():
@@ -75,13 +78,70 @@ def updateCarPosition(car, screenW):
     elif car.x > screenW - car.image.get_rect().width:
         car.x = screenW - car.image.get_rect().width
 
-def getObstacles(gameDisplay):
-    #gameDisplay.blit
-    return 0
+def getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles):
+    # Time-based generation of new hole obstacle every 5 seconds
+    if elapsedTime - lastHoleTime >= 1:
+        try:
+            holeObstacle = pygame.image.load('resources/hole.png')  # Load the obstacle image
+            holeObstacle = pygame.transform.scale(holeObstacle, (80, 80))  # Resize it to fit the street
+        except pygame.error as e:
+            print(f"Failed to load hole image: {e}")
+            return lastHoleTime  # Exit early if image loading fails
+
+        holeSize = holeObstacle.get_rect()
+
+        # Generate random x position for the hole within street bounds
+        screenSize = gameDisplay.get_rect()
+        x = random.randint(0, int(screenSize.width - holeSize.width))
+        y = -holeSize.height  # Start the hole just above the screen, so it moves down into view
+
+        # Add the new hole to the obstacles list
+        obstacles.append((holeObstacle, x, y))
+
+        # Reset the lastHoleTime to the current elapsedTime
+        lastHoleTime = elapsedTime
+
+    # Move the obstacles down and blit them on the screen
+    for obstacle in obstacles[:]:
+        holeImg, x, y = obstacle
+        y += 5  # Move the hole down by 5 pixels per frame
+
+        # Remove the hole if it goes off the screen
+        if y > gameDisplay.get_rect().height:
+            obstacles.remove(obstacle)  # Remove obstacle if it moves out of screen
+        else:
+            # Update the obstacle's position in the list
+            obstacles[obstacles.index(obstacle)] = (holeImg, x, y)
+            
+            # Blit the hole to the screen at its new position
+            gameDisplay.blit(holeImg, (x, y))
+        
+        if checkCollision(car, obstacle):
+            car.damage(10)
+            print('you lost a life')
+
+    return lastHoleTime
+
+def checkCollision(car, obstacle):
+    # Get the car's bounding rectangle
+    carRect = pygame.Rect(car.x, car.y, car.image.get_width(), car.image.get_height())
+
+    # Check for collision with each obstacle (hole) in the obstacles list
+    holeRect = pygame.Rect(obstacle[1], obstacle[2], obstacle[0].get_width(), obstacle[0].get_height())
+
+    # Check if the car's rect collides with the hole's rect
+    if carRect.colliderect(holeRect):
+        return True  # Collision occurred
+
+    return False  # No collision
 
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
     streetOffset = 0  # Start with zero offset
+
+    lastHoleTime = 0  # To track when the last hole was generated
+    holeObstacle = None  # Placeholder for the hole image
+    obstacles = []  # List to store active obstacles
 
     # Main game loop
     while not crashed:
@@ -96,9 +156,15 @@ def main():
         if streetOffset <= -80:  # line height + offset
             streetOffset = 0  # Reset to avoid overflow
 
+        # Calculate elapsed time
+        elapsedTime = pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
+
         # Draw everything
         loadStreet(gameDisplay, streetOffset)
-        getObstacles(gameDisplay)
+        
+        # Get and display obstacles
+        lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles)
+        
         drawCar(car, gameDisplay)
 
         # Update the display
@@ -107,6 +173,7 @@ def main():
 
     pygame.quit()
     quit()
+
 
 if __name__ == '__main__':
     main()
