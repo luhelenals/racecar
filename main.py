@@ -85,9 +85,9 @@ def handleEvents(car, pygame, paused, acceleration, nitroTime):
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             return True, paused, acceleration, nitroTime
 
-    return False, paused, acceleration, nitroTime
+    return False, paused, acceleration, nitroTime    
 
-def showHealth(car, gameDisplay):
+def showText(car, gameDisplay):
     pygame.font.init()
     my_font = pygame.font.SysFont('Arial', 30)
     health_surface = my_font.render('Health: ' + str(car.health), False, Color.BLACK.value)
@@ -163,6 +163,60 @@ def checkCollision(car, obstacle):
 
     return False  # No collision
 
+def showMenu(gameDisplay, paused, crashed, elapsedTime):
+    # Get the screen dimensions
+    screen = gameDisplay.get_rect()
+
+    # Define the pause menu dimensions (60% of the screen size)
+    menuH = screen.height * 0.6
+    menuW = screen.width * 0.6
+    menu = pygame.Surface((menuW, menuH))
+    menu.fill(Color.GREEN.value)
+
+    # Calculate the center position of the menu
+    menu_x = (screen.width - menuW) / 2
+    menu_y = (screen.height - menuH) / 2
+
+    # Blit the menu to the screen at the calculated center
+    gameDisplay.blit(menu, (menu_x, menu_y))
+
+    # Initialize fonts
+    pygame.font.init()
+    titleFont = pygame.font.SysFont('Arial', 60)
+    subTitleFont = pygame.font.SysFont('Arial', 20)
+
+    # Create text surfaces
+    if paused and not crashed:
+        title = 'PAUSED'
+        sub1 = 'Press "P" to continue or'
+        sub2 = '"ESCAPE" to quit the game.'
+    elif crashed:
+        title = 'GAME OVER'
+        sub1 = 'Better driving next time!'
+        sub2 = f'You lasted {str(elapsedTime)} seconds!'
+    
+
+    titleSurface = titleFont.render(title, True, Color.BLACK.value)
+    subSurface = subTitleFont.render(sub1, True, Color.BLACK.value)
+    subSurface2 = subTitleFont.render(sub2, True, Color.BLACK.value)
+
+    # Get the dimensions of the text surfaces
+    pausedRect = titleSurface.get_rect()
+    subRect = subSurface.get_rect()
+    subRect2 = subSurface2.get_rect()
+
+    # Calculate the centered positions for the text relative to the menu
+    paused_x = menu_x + (menuW - pausedRect.width) / 2
+    paused_y = menu_y + (menuH - pausedRect.height) / 4  # Slightly higher for the title
+    sub_x = menu_x + (menuW - subRect.width) / 2
+    sub_y = paused_y + pausedRect.height + 30  # Below the title with some padding
+    sub2_x = menu_x + (menuW - subRect2.width) / 2
+
+    # Blit the text surfaces to the screen at the calculated positions
+    gameDisplay.blit(titleSurface, (paused_x, paused_y))
+    gameDisplay.blit(subSurface, (sub_x, sub_y))
+    gameDisplay.blit(subSurface2, (sub2_x, sub_y + 28))
+
 def main():
     gameDisplay, clock, crashed, car, pygame = initGame()
     streetOffset = 0  # Start with zero offset
@@ -185,9 +239,6 @@ def main():
             streetOffset -= (5 + acceleration)  # Move the street lines up instead of down
             if streetOffset <= -80:  # line height + offset
                 streetOffset = 0  # Reset to avoid overflow
-
-        # Calculate elapsed time
-        if not paused:
             elapsedTime = pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
 
         # Draw everything
@@ -197,8 +248,16 @@ def main():
         lastHoleTime = getObstacles(gameDisplay, car, elapsedTime, lastHoleTime, holeObstacle, obstacles, paused, acceleration)
         
         drawCar(car, gameDisplay)
+        showText(car, gameDisplay)
+
+        if car.health == 0:
+            crashed = True
+            paused = True
+
+        if paused:
+            showMenu(gameDisplay, paused, crashed, elapsedTime)
+        
         crashed, paused, acceleration, nitroTime = handleEvents(car, pygame, paused, acceleration, nitroTime)
-        showHealth(car, gameDisplay)
         
         # Update the display
         pygame.display.update()
@@ -206,7 +265,6 @@ def main():
 
     pygame.quit()
     quit()
-
 
 if __name__ == '__main__':
     main()
